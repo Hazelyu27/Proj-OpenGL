@@ -2,6 +2,9 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include "shader.h"
+
+#include<filesystem>
+#include "stb_image.h"
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -16,17 +19,23 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 
-// shader class
-unsigned int indices[] = {
-    // 注意索引从0开始! 
-    // 此例的索引(0,1,2,3)就是顶点数组vertices的下标，
-    // 这样可以由下标代表顶点组合成矩形
-
-    0, 1, 2, // 第一个三角形
-    3, 4, 5  // 第二个三角形
+// 纹理坐标
+float texCoords[] = {
+    0.0f, 0.0f,
+    1.0f, 0.0f,
+    0.5f, 1.0f
 };
-
-
+    float vertices[] = {
+        // positions          // colors           // texture coords
+         0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
+         0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
+        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
+    };
+unsigned indices[] = {
+    0,1,3,
+    1,2,3
+};
 int main(void)
 {
     glfwInit();
@@ -54,39 +63,69 @@ int main(void)
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
-    float vertices[] = {
-        // positions         // colors
-              1.0f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // bottom right
-             -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // bottom left
-              0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f   // top 
 
-    };
+
+
 
 
     // 渲染循环
 
-    Shader ourShader("shader.vs", "shader.fs");
-    float offset = 1.0f;
-    ourShader.setFloat("xOffset", offset);
+    Shader ourShader("vertex.shader", "fragment.shader");
+
 
     // 创建一个vbo对象
-    unsigned int VBO, VAO;
+    unsigned int VBO, VAO,EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO); //生成一个id的vbo对象
+    glGenBuffers(1, &EBO);
 
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO); // 把一个array绑定到GL_ARRAY_BUFFER
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //把顶点复制到缓冲的内存中 GL_STATIC_DRAW：几乎不会改变
 
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // 告诉函数引用顶点数据
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    // color数据
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    // vertex数据
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+
+
+    // 生成纹理
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    // 为当前绑定的纹理对象设置环绕、过滤方式
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // 加载纹理图像
+    int width, height, nrChannels;
+    unsigned char* data = stbi_load("texture2.jpg", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+
+
 
     // draw our first triangle
     //glUseProgram(shaderProgram);
@@ -102,6 +141,13 @@ int main(void)
 
 
         ourShader.use();
+
+        //glActiveTexture(GL_TEXTURE0); // 在绑定纹理之前先激活纹理单元
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+
         // update color 
         //float timeValue = glfwGetTime();
         //float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
