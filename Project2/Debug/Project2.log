@@ -1,5 +1,4 @@
 ﻿  main.cpp
-D:\code\c++\OpenGL\Project2\Project2\shader.h(5,10): warning C4067: 预处理器指令后有意外标记 - 应输入换行符
   The contents of <filesystem> are available only with C++17 or later.
-LINK : warning LNK4098: 默认库“MSVCRT”与其他库的使用冲突；请使用 /NODEFAULTLIB:library
+D:\code\c++\OpenGL\Project2\Project2\shader.h(5,10): warning C4067: 预处理器指令后有意外标记 - 应输入换行符
   Project2.vcxproj -> D:\code\c++\OpenGL\Project2\Debug\Project2.exe

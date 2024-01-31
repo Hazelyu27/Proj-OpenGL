@@ -1,16 +1,21 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <iostream>
+#include "stb_image.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <filesystem>
 #include "shader.h"
 
-#include<filesystem>
-#include "stb_image.h"
+
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }
 void processInput(GLFWwindow* window)
 {
+    //可以添加一些键值做交互
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 }
@@ -28,9 +33,9 @@ float texCoords[] = {
 float vertices[] = {
     // positions          // colors           // texture coords
         0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
-        0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
-    -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
-    -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
+        0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, -1.0f, // bottom right
+    -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   -1.0f, -1.0f, // bottom left
+    -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   -1.0f, 1.0f  // top left 
 };
 unsigned indices[] = {
     0,1,3,
@@ -38,6 +43,13 @@ unsigned indices[] = {
 };
 int main(void)
 {
+    // 位移矩阵
+    //glm::mat4 trans; // 建立一个单位矩阵
+    //trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0, 0.0, 1.0));
+    //trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
+
+
+
     glfwInit();
     // 设置opengl的主次版本号
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -107,14 +119,16 @@ int main(void)
     glBindTexture(GL_TEXTURE_2D, texture1);
 
     // 为当前绑定的纹理对象设置环绕、过滤方式
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // S,T是对应的不同坐标轴
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // 加载纹理图像
     int width, height, nrChannels;
-    stbi_set_flip_vertically_on_load(true); // 沿着y轴，免得反过来
+   // stbi_set_flip_vertically_on_load(true); // 沿着y轴，免得反过来
+
     unsigned char* data = stbi_load("texture2.jpg", &width, &height, &nrChannels, 0);
     if (data)
     {
@@ -151,8 +165,11 @@ int main(void)
 
     ourShader.use();
     // 每个shader属于哪个纹理单元
-    glUniform1i(glGetUniformLocation(ourShader.ID, "texture1"), 1); // 手动设置
-    ourShader.setInt("texture2", 0); // 或者使用着色器类设置
+    glUniform1i(glGetUniformLocation(ourShader.ID, "texture1"), 0); // 手动设置
+    ourShader.setInt("texture2", 1); // 或者使用着色器类设置
+
+
+
     // draw our first triangle
     //glUseProgram(shaderProgram);
 
@@ -160,6 +177,14 @@ int main(void)
     {
         // input
         processInput(window);
+        glm::mat4 trans; // 建立一个单位矩阵
+        trans = glm::translate(trans, glm::vec3(1.0, 1.0, 0.0));
+        trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0, 0.0, 1.0));
+        trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
+
+        // 设置变换矩阵
+        unsigned int transformLoc = glGetUniformLocation(ourShader.ID, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
 
         // render
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
