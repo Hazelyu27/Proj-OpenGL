@@ -1,4 +1,4 @@
 ﻿  main.cpp
-  The contents of <filesystem> are available only with C++17 or later.
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\include\filesystem(13): warning STL4038: The contents of <filesystem> are available only with C++17 or later.
 D:\code\c++\OpenGL\Project2\Project2\shader.h(5,10): warning C4067: 预处理器指令后有意外标记 - 应输入换行符
   Project2.vcxproj -> D:\code\c++\OpenGL\Project2\Debug\Project2.exe
